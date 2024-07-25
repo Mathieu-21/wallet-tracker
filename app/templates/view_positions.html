@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Positions</title>
+    <title>Positions pour Fonds</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
@@ -17,33 +17,178 @@
         </div>
     </nav>
     <div class="container">
-        <h1>Positions</h1>
+        <h1>Positions pour le Fonds</h1>
         <ul id="positions-list"></ul>
+        <h3>Ajouter une Nouvelle Position</h3>
+        <form id="add-position-form" class="form-inline">
+            
+            <div class="form-group">
+                <label for="instrument-select" class="mx-1">Instrument:</label>
+                <select id="instrument-select" class="form-control">
+                </select>
+            </div> 
+            <div class="form-group mx-4">
+                <label for="weight-input" class="mx-1">Poids (%):</label>
+                <input id="weight-input" type="number" class="form-control" min="0" max="100" step="0.01" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+            <p id="message" class="mt-2"></p>
+        </form>
+        <br>
         <p id="total-weight"></p>
-        <p id="warning" style="color: red; display: none;">Attention: Le poids total n'atteint pas 100%</p>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const fundId = window.location.pathname.split('/').pop();
-            
-            fetch(`/api/positions/${fundId}`)
+            const fundId = "{{ fund_id }}";
+            const positions = document.getElementById('positions-list');
+            const instrumentSelect = document.getElementById('instrument-select');
+            const weightInput = document.getElementById('weight-input');
+            const weightTotal = document.getElementById('total-weight');
+            const message = document.getElementById('message');
+            const addPositionForm = document.getElementById('add-position-form');
+
+            function fetchPositions() {
+                fetch(`/api/positions/${fundId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        positions.innerHTML = '';
+                        data.positions.forEach(position => {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                            li.innerHTML = `
+                                ${position.instrument.name} - ${position.weight}%
+                                <button class="btn btn-danger btn-sm delete-btn" data-id="${position.id}">Supprimer</button>
+                            `;
+                            console.log(position);
+                            positions.appendChild(li);
+                        });
+                        const totalWeight = data.total_weight;
+                        weightTotal.textContent = `Poids total: ${totalWeight}%`;
+                        if (totalWeight < 100) {
+                            weightTotal.style.color = 'red';
+                            weightTotal.textContent += ' (Le poids total n\'atteint pas 100%)';
+                        } else if (totalWeight > 100) {
+                            weightTotal.style.color = 'red';
+                            weightTotal.textContent += ' (Le poids total dépasse 100%)';
+                        } else {
+                            weightTotal.style.color = 'green';
+                        }
+                        document.querySelectorAll('.delete-btn').forEach(button => {
+                            button.addEventListener('click', function() {
+                                const positionId = this.getAttribute('data-id');
+                                deletePosition(positionId);
+                            });
+                        });
+                    });
+            }
+
+            function fetchInstruments() {
+                fetch('/api/instruments')
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(instrument => {
+                            const option = document.createElement('option');
+                            option.value = instrument.id;
+                            option.textContent = `${instrument.name} (${instrument.type})`;
+                            instrumentSelect.appendChild(option);
+                        });
+                    });
+            }
+
+            function deletePosition(positionId) {
+                fetch(`/api/positions/${positionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la suppression de la position.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        fetchPositions();
+                    } else {
+                        message.textContent = 'Erreur lors de la suppression de la position.';
+                        message.style.color = 'red';
+                    }
+                })
+                .catch(error => {
+                    message.textContent = error.message;
+                    message.style.color = 'red';
+                });
+            }
+
+            addPositionForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const instrumentId = parseInt(instrumentSelect.value);
+                const weight = parseFloat(weightInput.value);
+
+                const currentTotalWeight = parseFloat(weightTotal.textContent.match(/(\d+(\.\d+)?)/)[0]);
+                const newTotalWeight = currentTotalWeight + weight;
+
+                if (newTotalWeight > 100) {
+                    message.textContent = 'Erreur: Le poids total dépasse 100%.';
+                    message.style.color = 'red';
+                    return;
+                }
+
+                fetch(`/api/positions/${fundId}/check`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        instrument_id: instrumentId
+                    })
+                })
                 .then(response => response.json())
                 .then(data => {
-                    const positionsList = document.getElementById('positions-list');
-                    data.positions.forEach(position => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `Instrument: ${position.instrument.name} - Poids: ${position.weight}%`;
-                        positionsList.appendChild(li);
-                    });
-
-                    const totalWeightElem = document.getElementById('total-weight');
-                    totalWeightElem.innerHTML = `Poids total: ${data.total_weight}%`;
-
-                    if (data.total_weight !== 100) {
-                        document.getElementById('warning').style.display = 'block';
+                    if (data.exists) {
+                        message.textContent = 'Erreur: Cette position est déjà définie pour ce fonds.';
+                        message.style.color = 'red';
+                    } else {
+                        fetch('/api/positions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                fund_id: fundId,
+                                instrument_id: instrumentId,
+                                weight: weight
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Erreur lors de l\'ajout de la position.');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                fetchPositions();
+                                weightInput.value = '';
+                                message.textContent = '';
+                            } else {
+                                message.textContent = 'Erreur lors de l\'ajout de la position.';
+                                message.style.color = 'red';
+                            }
+                        })
+                        .catch(error => {
+                            message.textContent = error.message;
+                            message.style.color = 'red';
+                        });
                     }
                 });
+            });
+
+            fetchPositions();
+            fetchInstruments();
         });
     </script>
 </body>
