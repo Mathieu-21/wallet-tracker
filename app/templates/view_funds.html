@@ -18,25 +18,39 @@
     </nav>
     <div class="container">
         <h1>Fonds</h1>
+        <form id="search-form" class="form-inline mb-4">
+            <input class="form-control mr-2" type="search" id="search-query" placeholder="Rechercher des fonds">
+            <button class="btn btn-primary" type="submit">Rechercher</button>
+        </form>
         <ul id="fonds-list" class="list-group"></ul>
-    </div>
+        </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('/api/fonds')
-                .then(response => response.json())
-                .then(data => {
-                    const fondsList = document.getElementById('fonds-list');
-                    data.forEach(fund => {
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item';
-                        li.innerHTML = `
-                            ${fund.name}
-                            <a href="/positions/${fund.id}" class="btn btn-primary btn-sm float-right">View Positions</a>
-                        `;
-                        fondsList.appendChild(li);
-                    });
-                });
+            const searchForm = document.getElementById('search-form');
+            const searchQuery = document.getElementById('search-query');
+            const fondsList = document.getElementById('fonds-list');
+
+            function fetchFonds(query = '') {
+                fetch(`/api/fonds?search=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        fondsList.innerHTML = '';
+                        data.forEach(fund => {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item';
+                            li.innerHTML = `${fund.name} <a href="/positions/${fund.id}" class="btn btn-primary btn-sm float-right">View Positions</a>`;
+                            fondsList.appendChild(li);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            searchForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                fetchFonds(searchQuery.value);
+            });
+            fetchFonds();
         });
     </script>
 </body>

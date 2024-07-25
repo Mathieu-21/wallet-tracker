@@ -1,12 +1,18 @@
-from flask import jsonify, render_template
+from flask import jsonify, render_template, request
 from app.app import app, db
 from app.models import ReferentielFonds, ReferentielInstruments, Positions
 
-# Retourner la liste des fonds
+# Retourner la liste des fonds avec un filtre de recherche
 @app.route('/api/fonds', methods=['GET'])
 def api_fonds():
-    fonds = ReferentielFonds.query.all()
-    return jsonify([{'id': fund.id, 'name': fund.name} for fund in fonds])
+    search_query = request.args.get('search', '')
+    if search_query:
+        results = ReferentielFonds.query.filter(ReferentielFonds.name.ilike(f'%{search_query}%')).all()
+    else:
+        results = ReferentielFonds.query.all()
+    
+    fonds = [{'id': fund.id, 'name': fund.name} for fund in results]
+    return jsonify(fonds)
 
 # Retourner la liste des instruments
 @app.route('/api/instruments', methods=['GET'])
