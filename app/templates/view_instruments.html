@@ -18,21 +18,65 @@
     </nav>
     <div class="container">
         <h1>Instruments</h1>
-        <ul id="instruments-list"></ul>
+        <form id="add-instrument-form" class="form-inline mb-4">
+            <input class="form-control" type="text" id="instrument-name" placeholder="Nom de l'instrument" required>
+            <input class="form-control" type="text" id="instrument-type" placeholder="Type de l'instrument" required>
+            <button class="btn btn-primary" type="submit">Ajouter Instrument</button>
+        </form>
+        <ul id="instruments-list" class="list-group"></ul>
+        <div id="message"></div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('/api/instruments')
-                .then(response => response.json())
-                .then(data => {
-                    const instrumentsList = document.getElementById('instruments-list');
-                    data.forEach(instrument => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `${instrument.name} - ${instrument.type}`;
-                        instrumentsList.appendChild(li);
-                    });
-                });
+            const instrumentsList = document.getElementById('instruments-list');
+            const addInstrumentForm = document.getElementById('add-instrument-form');
+            const instrumentName = document.getElementById('instrument-name');
+            const instrumentType = document.getElementById('instrument-type');
+            const messageDiv = document.getElementById('message');
+
+            function fetchInstruments() {
+                fetch('/api/instruments')
+                    .then(response => response.json())
+                    .then(data => {
+                        instrumentsList.innerHTML = '';
+                        data.forEach(instrument => {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item';
+                            li.innerHTML = `${instrument.name} - ${instrument.type}`;
+                            instrumentsList.appendChild(li);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            addInstrumentForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const name = instrumentName.value;
+                const type = instrumentType.valu;
+                if (name && type) {
+                    fetch('/api/instruments', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ name, type })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            instrumentName.value = '';
+                            instrumentType.value = '';
+                            fetchInstruments();
+                            messageDiv.innerHTML = '<div class="alert alert-success">Instrument ajouté avec succès</div>';
+                        } else {
+                            messageDiv.innerHTML = '<div class="alert alert-danger">Erreur lors de l\'ajout</div>';
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            });
+
+            fetchInstruments();
         });
     </script>
 </body>
