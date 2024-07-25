@@ -16,20 +16,29 @@
             </ul>
         </div>
     </nav>
-    <div class="container">
+    <div class="container mt-4">
         <h1>Fonds</h1>
         <form id="search-form" class="form-inline mb-4">
             <input class="form-control mr-2" type="search" id="search-query" placeholder="Rechercher des fonds">
             <button class="btn btn-primary" type="submit">Rechercher</button>
         </form>
+        <form id="add-fund-form" class="mb-4">
+            <div class="form-group">
+                <label for="fund-name">Nom du fond:</label>
+                <input class="form-control" type="text" id="fund-name" required>
+            </div>
+            <button class="btn btn-primary" type="submit">Ajouter Fond</button>
+        </form>
         <ul id="fonds-list" class="list-group"></ul>
-        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const searchForm = document.getElementById('search-form');
             const searchQuery = document.getElementById('search-query');
             const fondsList = document.getElementById('fonds-list');
+            const addFundForm = document.getElementById('add-fund-form');
+            const fundNameInput = document.getElementById('fund-name');
 
             function fetchFonds(query = '') {
                 fetch(`/api/fonds?search=${encodeURIComponent(query)}`)
@@ -39,7 +48,7 @@
                         data.forEach(fund => {
                             const li = document.createElement('li');
                             li.className = 'list-group-item';
-                            li.innerHTML = `${fund.name} <a href="/positions/${fund.id}" class="btn btn-primary btn-sm float-right">View Positions</a>`;
+                            li.innerHTML = `${fund.name} <a href="/positions/${fund.id}" class="btn btn-primary btn-sm float-right">Voir les positions</a>`;
                             fondsList.appendChild(li);
                         });
                     })
@@ -49,6 +58,30 @@
             searchForm.addEventListener('submit', function(event) {
                 event.preventDefault();
                 fetchFonds(searchQuery.value);
+            });
+
+            addFundForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const fundName = fundNameInput.value.trim();
+                if (fundName) {
+                    fetch('/api/fonds', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ name: fundName }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            fetchFonds();
+                            fundNameInput.value = '';
+                        } else {
+                            console.error('Error:', data.message);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
             });
             fetchFonds();
         });
