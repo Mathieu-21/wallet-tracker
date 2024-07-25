@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fonds</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">Portfolio Tracker</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="/fonds">Fonds</a></li>
+                <li class="nav-item"><a class="nav-link" href="/instruments">Instruments</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Fonds</h1>
+        <ul id="fonds-list" class="list-group"></ul>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/fonds')
+                .then(response => response.json())
+                .then(data => {
+                    const fondsList = document.getElementById('fonds-list');
+                    data.forEach(fund => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.innerHTML = `
+                            ${fund.name}
+                            <a href="/positions/${fund.id}" class="btn btn-primary btn-sm float-right">View Positions</a>
+                        `;
+                        fondsList.appendChild(li);
+                    });
+                });
+        });
+    </script>
+</body>
+</html>

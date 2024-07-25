@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Positions</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">Portfolio Tracker</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="/fonds">Fonds</a></li>
+                <li class="nav-item"><a class="nav-link" href="/instruments">Instruments</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Positions</h1>
+        <ul id="positions-list"></ul>
+        <p id="total-weight"></p>
+        <p id="warning" style="color: red; display: none;">Attention: Le poids total n'atteint pas 100%</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fundId = window.location.pathname.split('/').pop();
+            
+            fetch(`/api/positions/${fundId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const positionsList = document.getElementById('positions-list');
+                    data.positions.forEach(position => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `Instrument: ${position.instrument.name} - Poids: ${position.weight}%`;
+                        positionsList.appendChild(li);
+                    });
+
+                    const totalWeightElem = document.getElementById('total-weight');
+                    totalWeightElem.innerHTML = `Poids total: ${data.total_weight}%`;
+
+                    if (data.total_weight !== 100) {
+                        document.getElementById('warning').style.display = 'block';
+                    }
+                });
+        });
+    </script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome</title>
+    <title>Instruments</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
@@ -17,8 +17,23 @@
         </div>
     </nav>
     <div class="container">
-        <h1>Bienvenue sur Portfolio Tracker</h1>
-        <p>Utilise la barre de navigation pour te deplacer entre les fonds et les instruments.</p>
+        <h1>Instruments</h1>
+        <ul id="instruments-list"></ul>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/instruments')
+                .then(response => response.json())
+                .then(data => {
+                    const instrumentsList = document.getElementById('instruments-list');
+                    data.forEach(instrument => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `${instrument.name} - ${instrument.type}`;
+                        instrumentsList.appendChild(li);
+                    });
+                });
+        });
+    </script>
 </body>
 </html>
