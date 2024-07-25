@@ -149,7 +149,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.exists) {
-                        message.textContent = 'Erreur: Cette position est déjà définie pour ce fonds.';
+                        message.textContent = 'Erreur: Cette position est déjà définie pour ce fond.';
                         message.style.color = 'red';
                     } else {
                         fetch('/api/positions', {
