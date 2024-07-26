@@ -65,6 +65,7 @@ def api_positions(fund_id):
         'total_weight': total_weight
     })
 
+# Supprimer une position
 @app.route('/api/positions/<int:position_id>', methods=['DELETE'])
 def delete_position(position_id):
     position = Positions.query.get(position_id)
@@ -98,6 +99,7 @@ def check_position(fund_id):
     instrument_id = data.get('instrument_id')
     exists = Positions.query.filter_by(fund_id=fund_id, instrument_id=instrument_id).first() is not None
     return jsonify({'exists': exists})
+
 
 # Routes pour les pages web
 
