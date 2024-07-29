@@ -53,7 +53,7 @@
             addInstrumentForm.addEventListener('submit', function(event) {
                 event.preventDefault();
                 const name = instrumentName.value;
-                const type = instrumentType.valu;
+                const type = instrumentType.value;
                 if (name && type) {
                     fetch('/api/instruments', {
                         method: 'POST',
