@@ -1,0 +1,6 @@
+[
+    {"id_template":1,"date_creation":"2024-11-06 15:42:08","id_createur":20,"nom_template":"Template IRP Bimensuel","couleur_template_ppal":"#007ACF","couleur_template_sec":"#3350FF"},
+    {"id_template":2,"date_creation":"2024-11-12 14:56:49","id_createur":20,"nom_template":"Template PRIIPS","couleur_template_ppal":"#007ACF","couleur_template_sec":"#3350FF"},
+    {"id_template":3,"date_creation":"2024-11-13 14:55:05","id_createur":20,"nom_template":"Template PEA A","couleur_template_ppal":"#007ACF","couleur_template_sec":"#3350FF"},
+    {"id_template":4,"date_creation":"2024-11-13 16:03:21","id_createur":20,"nom_template":"Template Sextant PME A","couleur_template_ppal":"#007ACF","couleur_template_sec":"#3350FF"}
+]

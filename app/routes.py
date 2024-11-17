@@ -1,6 +1,8 @@
-from flask import jsonify, render_template, request
+from flask import jsonify, render_template, request, current_app
 from app.app import app, db
 from app.models import ReferentielFonds, ReferentielInstruments, Positions
+import json
+import os
 
 # Retourner la liste des fonds avec un filtre de recherche
 @app.route('/api/fonds', methods=['GET'])
@@ -115,6 +117,105 @@ def fonds():
 def instruments():
     return render_template('view_instruments.html')
 
+@app.route('/create_template')
+def create_template():
+    return render_template('create_template.html')
+
 @app.route('/positions/<int:fund_id>')
 def positions(fund_id):
     return render_template('view_positions.html', fund_id=fund_id)
+
+@app.route('/reporting/create_reporting/get_blocks/', methods=['GET'])
+def get_blocks():
+    file_path = os.path.join(current_app.root_path, 'static', 'json', 'correspondance_templates_blocks.json')
+
+    try:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+            result = [
+                {
+                    'nom_block': block.get('nom_block', ''),
+                    'description_block': block.get('description_block', ''),
+                    'position_x_start': block.get('position_x_start', 0),
+                    'position_y_start': block.get('position_y_start', 0),
+                    'position_x_end': block.get('position_x_end', 0),
+                    'position_y_end': block.get('position_y_end', 0)
+                }
+                for block in data
+            ]
+            return jsonify({'data': result})
+    except FileNotFoundError:
+        return jsonify({'error': 'JSON file not found'}), 404
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Error decoding JSON data'}), 400
+    
+@app.route('/reporting/create_reporting/get_templates/', methods=['GET'])
+def get_templates():
+    file_path = os.path.join(current_app.root_path, 'static', 'json', 'ref_templates_reporting.json')
+
+    try:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+            result = [
+                {
+                    'nom_template': template.get('nom_template', ''),
+                    'id_template': template.get('id_template', 0)
+                }
+                for template in data
+            ]
+            return jsonify({'data': result})
+    except FileNotFoundError:
+        return jsonify({'error': 'JSON file not found'}), 404
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Error decoding JSON data'}), 400
+    
+@app.route('/reporting/create_reporting/get_blocks_template/', methods=['POST'])
+def get_blocks_template():
+    
+    data = request.json
+    id_template = data['id_template']
+
+    file_path_blocks = os.path.join(current_app.root_path, 'static', 'json', 'correspondance_templates_blocks.json')
+    file_path_blocks_reporting = os.path.join(current_app.root_path, 'static', 'json', 'ref_blocks_reporting.json')
+
+    try:
+        with open(file_path_blocks, 'r') as file_blocks, open(file_path_blocks_reporting, 'r') as file_blocks_reporting:
+            blocks_data = json.load(file_blocks)
+            blocks_reporting_data = json.load(file_blocks_reporting)
+
+            filtered_blocks = [
+                block for block in blocks_data if block.get('id_template') == id_template
+            ]
+
+            result = []
+            for block in filtered_blocks:
+                matching_block_reporting = next(
+                    (br for br in blocks_reporting_data if br.get('id_block') == block.get('id_template_block')), {}
+                )
+                result.append({
+                    'nom_block': matching_block_reporting.get('nom_block', ''),
+                    'description_block': matching_block_reporting.get('description_block', ''),
+                    'position_x_start': block.get('position_x_start', 0),
+                    'position_y_start': block.get('position_y_start', 0),
+                    'position_x_end': block.get('position_x_end', 0),
+                    'position_y_end': block.get('position_y_end', 0),
+                    'num_page': block.get('num_page', 0)
+                })
+
+            result = sorted(
+                result,
+                key=lambda x: (
+                    x['position_y_start'],
+                    x['position_x_start'],
+                    x['position_y_end'],
+                    x['position_x_end']
+                )
+            )
+            
+            return jsonify({'data': result})
+
+    except FileNotFoundError:
+        return jsonify({'error': 'JSON file not found'}), 404
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Error decoding JSON data'}), 400
+
